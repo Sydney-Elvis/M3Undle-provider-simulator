@@ -1,0 +1,35 @@
+schema_version: 1
+minimum_engine_version: 0.2.0
+
+name: baseline-15-authentication-success-and-failure
+description: >
+  Stage A7 baseline #15. provider.authentication (mode: static) gates the
+  generic M3U provider path -- /playlist.m3u and /channels/{id} -- the
+  block the Stage A5 example schema always showed but never wired up (the
+  Xtream API surface already had its own separate credential check).
+  Requests with the wrong or missing username/password get 401
+  invalid_credentials; requests with the configured credentials work
+  exactly like every other baseline scenario. /playlist.m3u embeds the
+  configured credentials into each channel's stream URL when
+  authentication is set, matching how the Xtream surface already embeds
+  its own credentials into stream URLs. Success and failure are both
+  exercised against this one provider by varying the query-string
+  credentials on the request -- there is no separate "failure" scenario
+  file needed.
+
+provider:
+  name: baseline-auth
+  max_streams: 4
+  authentication:
+    mode: static
+    username: baseline-user
+    password: baseline-pass
+  channels:
+    authenticated-channel:
+      display_name: Authentication Success and Failure
+      group_title: Sim-Baseline
+      payload_mode: ts
+      failure_mode: none
+
+expected_simulator_events:
+  - stream_opened

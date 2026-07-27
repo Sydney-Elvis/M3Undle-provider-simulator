@@ -1,0 +1,24 @@
+schema_version: 1
+minimum_engine_version: 0.2.0
+
+name: baseline-08-temporary-http-503
+description: >
+  Stage A7 baseline #8. Every request to this channel gets HTTP 503
+  immediately, no Retry-After header -- a provider that's simply down,
+  with no guidance on when to retry. Distinct from baseline #9, which adds
+  the Retry-After header a well-behaved provider would include.
+
+provider:
+  name: baseline-503
+  max_streams: 4
+  channels:
+    temporary-503:
+      display_name: Temporary HTTP 503
+      group_title: Sim-Baseline
+      payload_mode: ts
+      failure_mode: http_error
+      failure_status_code: 503
+
+expected_simulator_events:
+  - stream_opened
+  - stream_http_error

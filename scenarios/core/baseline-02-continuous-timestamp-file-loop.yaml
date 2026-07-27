@@ -1,0 +1,27 @@
+schema_version: 1
+minimum_engine_version: 0.1.0
+
+name: baseline-02-continuous-timestamp-file-loop
+description: >
+  Stage A7 baseline #2. Streams the real FFmpeg-probeable
+  clean-relay-loop-long.ts fixture (30.021s, ~928kbps) with chunk_count *
+  payload_chunk_bytes kept comfortably below the file's own size, so the
+  connection never wraps back to byte zero -- a genuinely continuous
+  timestamp sequence, contrasted with baseline #3.
+
+provider:
+  name: baseline-file-loop
+  max_streams: 4
+  channels:
+    file-loop-continuous:
+      display_name: Continuous File Loop
+      group_title: Sim-Baseline
+      payload_mode: file
+      payload_file: fixtures/synthetic/clean-relay-loop-long.ts
+      payload_chunk_bytes: 1316
+      chunk_count: 1200
+      chunk_interval_ms: 20
+      failure_mode: none
+
+expected_simulator_events:
+  - stream_opened

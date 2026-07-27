@@ -1,0 +1,32 @@
+schema_version: 1
+minimum_engine_version: 0.2.0
+
+name: baseline-11-continuity-counter-errors
+description: >
+  Stage A7 baseline #11. `ts_variant: continuity_counter_fault` streams a
+  real, correctly incrementing continuity counter on the video PID (256) --
+  unlike every other ts_variant, which leaves CC hardcoded at 0 -- until 10
+  video packets have flowed, then deliberately skips one count (9 -> 11)
+  before resuming normal incrementing from the new value: a single,
+  discrete continuity-counter discontinuity, not a permanently broken
+  counter. A `ts_continuity_discontinuity_injected` event fires at the
+  moment it happens. Verified against the engine directly, packet by
+  packet: 0,1,2,...,9, then 11,12,13,... (mod 16 wraparound also checked
+  and correct).
+
+provider:
+  name: baseline-continuity-counter
+  max_streams: 4
+  channels:
+    continuity-counter:
+      display_name: Continuity Counter Errors
+      group_title: Sim-Baseline
+      payload_mode: ts
+      ts_variant: continuity_counter_fault
+      failure_mode: none
+      chunk_count: 35
+      chunk_interval_ms: 20
+
+expected_simulator_events:
+  - stream_opened
+  - ts_continuity_discontinuity_injected

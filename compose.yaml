@@ -1,0 +1,46 @@
+# Standalone build/run, no arguments needed:
+#   docker compose up --build
+#   curl http://127.0.0.1:19001/health
+#   curl http://127.0.0.1:19001/playlist.m3u
+#   docker compose run --rm simulator --version
+#
+# Build/verify optional workers:
+#   docker compose --profile workers build
+#   docker compose --profile workers run --rm media-worker -version
+#   docker compose --profile workers run --rm ts-worker --version
+
+services:
+  simulator:
+    build: .
+    ports:
+      - "19001:19001"
+    command:
+      - --bind
+      - "0.0.0.0"
+      - --port
+      - "19001"
+      - --public-host
+      - http://127.0.0.1:19001
+
+  # Local build only. The project does not publish this FFmpeg binary image.
+  media-worker:
+    profiles: ["workers"]
+    build:
+      context: ./docker/media-worker
+    image: m3undle-provider-simulator/media-worker:local
+    volumes:
+      - ./fixtures/synthetic:/work:rw
+    command: ["-version"]
+
+  # CI/CD publishes this project-owned BSD-licensed worker under this tag once
+  # a release is cut. Until then pull_policy: build makes Compose build the
+  # identical local recipe instead of failing on a not-yet-published pull.
+  ts-worker:
+    profiles: ["workers"]
+    image: ghcr.io/sydney-elvis/m3undle-provider-simulator-tsduck:3.44-4676
+    pull_policy: build
+    build:
+      context: ./docker/tsduck-worker
+    volumes:
+      - ./fixtures/synthetic:/work:rw
+    command: ["--version"]

@@ -1,0 +1,26 @@
+schema_version: 1
+minimum_engine_version: 0.1.0
+
+name: baseline-06-midstream-stall
+description: >
+  Stage A7 baseline #6. Streams cleanly for 20 chunks (~1s), then stalls
+  for 2s before the connection ends -- a stream that goes quiet mid-flight
+  rather than closing outright, distinct from both baseline #5 (abrupt
+  close) and baseline #7 (persistently slow, never fully stalled).
+
+provider:
+  name: baseline-midstream-stall
+  max_streams: 4
+  channels:
+    midstream-stall:
+      display_name: Midstream Stall
+      group_title: Sim-Baseline
+      payload_mode: ts
+      failure_mode: stall_after_chunks
+      failure_after_chunks: 20
+      chunk_interval_ms: 50
+      stall_seconds: 2.0
+
+expected_simulator_events:
+  - stream_opened
+  - stream_broken

@@ -1,0 +1,31 @@
+schema_version: 1
+minimum_engine_version: 0.2.0
+
+name: baseline-12-delayed-pat-pmt
+description: >
+  Stage A7 baseline #12 -- this is where Stage A2's deferred gaps 8/9 land
+  (relocated 2026-07-24, see the plan's A2 and A7 status notes). `ts_variant:
+  delayed_pat_pmt` streams video-only packets (SPS/PPS/IDR, no PAT or PMT
+  at all) for the first 3 cycles (15 chunks), simulating a provider that
+  takes a while to signal program tables; PAT/PMT then appear normally from
+  chunk 15 onward. A `ts_pat_pmt_delay_ended` event fires the moment normal
+  signaling resumes. Verified against the engine directly: zero PAT/PMT
+  packets in chunks 0-14, then PAT/PMT on the expected 5-packet cadence
+  from chunk 15 onward.
+
+provider:
+  name: baseline-delayed-pat-pmt
+  max_streams: 4
+  channels:
+    delayed-pat-pmt:
+      display_name: Delayed PAT/PMT
+      group_title: Sim-Baseline
+      payload_mode: ts
+      ts_variant: delayed_pat_pmt
+      failure_mode: none
+      chunk_count: 30
+      chunk_interval_ms: 20
+
+expected_simulator_events:
+  - stream_opened
+  - ts_pat_pmt_delay_ended

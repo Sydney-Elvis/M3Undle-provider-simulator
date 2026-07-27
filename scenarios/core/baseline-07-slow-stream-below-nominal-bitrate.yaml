@@ -1,0 +1,28 @@
+schema_version: 1
+minimum_engine_version: 0.1.0
+
+name: baseline-07-slow-stream-below-nominal-bitrate
+description: >
+  Stage A7 baseline #7. Streams clean-relay-loop-long.ts (the fixture's
+  own encoded bitrate is ~928kbps, see fixtures/synthetic/README.md) but paced
+  at 1316 bytes / 200ms -- about 52.6kbps, roughly 18x below the file's
+  real bitrate -- so the connection stays open and fault-free the whole
+  time but delivers well below nominal speed. Distinct from baseline #6
+  (a real stall) and baseline #8/#9 (outright HTTP failures).
+
+provider:
+  name: baseline-slow-stream
+  max_streams: 4
+  channels:
+    slow-below-bitrate:
+      display_name: Slow Stream Below Bitrate
+      group_title: Sim-Baseline
+      payload_mode: file
+      payload_file: fixtures/synthetic/clean-relay-loop-long.ts
+      payload_chunk_bytes: 1316
+      chunk_count: 100
+      chunk_interval_ms: 200
+      failure_mode: none
+
+expected_simulator_events:
+  - stream_opened

@@ -1,0 +1,32 @@
+schema_version: 1
+minimum_engine_version: 0.2.0
+
+name: baseline-10-malformed-ts-packet-sequence
+description: >
+  Stage A7 baseline #10. `ts_variant: malformed_packet` streams a clean
+  synthetic TS sequence until chunk 20, then injects exactly one packet
+  with transport_error_indicator set (byte 1, bit 0x80) -- the MPEG-TS
+  spec's own defined signal for "this packet is known-bad" (what a
+  satellite/cable receiver sets when forward error correction fails). This
+  is one well-defined interpretation of "malformed," not an exhaustive
+  taxonomy of every possible TS corruption. A `ts_malformed_packet_injected`
+  event fires at the moment it happens. Verified against the engine
+  directly: transport_error_indicator is set on exactly chunk 20 and
+  nowhere else across 40 chunks.
+
+provider:
+  name: baseline-malformed-ts
+  max_streams: 4
+  channels:
+    malformed-packet:
+      display_name: Malformed TS Packet Sequence
+      group_title: Sim-Baseline
+      payload_mode: ts
+      ts_variant: malformed_packet
+      failure_mode: none
+      chunk_count: 30
+      chunk_interval_ms: 20
+
+expected_simulator_events:
+  - stream_opened
+  - ts_malformed_packet_injected

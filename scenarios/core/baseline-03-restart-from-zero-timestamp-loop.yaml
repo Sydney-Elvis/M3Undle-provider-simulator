@@ -1,0 +1,30 @@
+schema_version: 1
+minimum_engine_version: 0.1.0
+
+name: baseline-03-restart-from-zero-timestamp-loop
+description: >
+  Stage A7 baseline #3. Streams timestamp-rewind-loop.ts (3.021s,
+  344792 bytes) -- a fixture deliberately sized shorter than this
+  scenario's configured payload_chunk_bytes * chunk_count (526400 bytes) --
+  so the engine's byte-modulo wraparound restarts the file from byte zero
+  partway through a single, otherwise-uninterrupted connection. This is the
+  intentional version of the "provider restarted from byte zero" fault; see
+  fixtures/synthetic/README.md for why this fixture exists specifically to
+  trigger it on purpose rather than by accident.
+
+provider:
+  name: baseline-restart-loop
+  max_streams: 4
+  channels:
+    restart-from-zero:
+      display_name: Restart From Zero Loop
+      group_title: Sim-Baseline
+      payload_mode: file
+      payload_file: fixtures/synthetic/timestamp-rewind-loop.ts
+      payload_chunk_bytes: 1316
+      chunk_count: 400
+      chunk_interval_ms: 20
+      failure_mode: none
+
+expected_simulator_events:
+  - stream_opened

@@ -1,0 +1,43 @@
+schema_version: 1
+minimum_engine_version: 0.2.0
+
+name: baseline-13-midstream-source-replacement
+description: >
+  Stage A7 baseline #13. Streams resolution-360p.ts, then a switch_source
+  step -- triggered after 100 chunks (~2s) have been served on the channel
+  -- swaps the live payload to resolution-720p.ts without closing the
+  connection: a genuine midstream source replacement, not a reconnect. The
+  two fixtures are the matched pair Stage A6 built specifically for
+  source-switch tests (identical encoding settings, only resolution
+  differs -- see fixtures/synthetic/README.md). A connection already open when
+  the switch fires sees the new source at its next chunk boundary; a new
+  connection opened after the switch sees resolution-720p.ts from the
+  start (this is what distinguishes switch_source from
+  set_channel_behavior, which only ever affects a channel's *next*
+  connection -- see ALLOWED_LIVE_SOURCE_FIELDS in provider_sim.py).
+
+provider:
+  name: baseline-source-switch
+  max_streams: 4
+  channels:
+    source-switch:
+      display_name: Midstream Source Replacement
+      group_title: Sim-Baseline
+      payload_mode: file
+      payload_file: fixtures/synthetic/resolution-360p.ts
+      payload_chunk_bytes: 1316
+      chunk_count: 800
+      chunk_interval_ms: 20
+      failure_mode: none
+
+sequence:
+  - action: switch_source
+    channel: source-switch
+    trigger:
+      after:
+        chunks: 100
+    payload_file: fixtures/synthetic/resolution-720p.ts
+
+expected_simulator_events:
+  - stream_opened
+  - source_switched

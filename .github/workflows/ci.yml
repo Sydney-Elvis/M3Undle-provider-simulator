@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install (editable)
+        run: pip install -e .
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Console script installed
+        run: provider-simulator --version
+
+      - name: Self-verify every scenarios/core/ example (--run, no external tools)
+        run: |
+          set -euo pipefail
+          for scenario in scenarios/core/*.yaml; do
+            echo "==> $scenario"
+            python src/provider_sim.py --run "$scenario" --settle-seconds 0.3
+          done
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install (for the host-side materializer script)
+        run: pip install -e .
+
+      - name: Build simulator image
+        run: docker build -t provider-simulator:ci .
+
+      - name: Build worker images
+        run: docker compose --profile workers build
+
+      - name: Smoke test standalone container
+        run: |
+          set -euo pipefail
+          docker compose up -d
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:19001/health; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:19001/health
+          curl -fsS http://127.0.0.1:19001/playlist.m3u | grep -q '#EXTM3U'
+          docker compose down
+
+      - name: Materialize and self-verify a generated-examples scenario
+        run: |
+          set -euo pipefail
+          chmod +x run-scenario.sh
+          SCENARIO=scenarios/generated-examples/audio-pid-timestamp-offset-generated.yaml
+          ./run-scenario.sh "$SCENARIO" -- --run "$SCENARIO" --settle-seconds 0.3

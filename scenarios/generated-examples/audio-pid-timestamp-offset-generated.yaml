@@ -1,0 +1,50 @@
+schema_version: 1
+
+name: audio-pid-timestamp-offset-generated
+description: >
+  Proves the scenario-driven worker materializer (src/materialize_fixtures.py)
+  end to end: generate: shifts the AUDIO PID (257) of clean-relay-loop-long.ts
+  backward 3000ms via the ts-worker's tsp/pcredit plugin -- a different PID
+  and a different offset than the existing hand-committed
+  clean-relay-timestamp-discontinuity.ts fixture (video PID 256, -5000ms),
+  so this is genuinely parametrized, not a replay of what's already there.
+
+  Not part of scenarios/core/: those must load with zero external tools
+  (test_valid_scenario_loads_cleanly's invariant), and this one requires the
+  file to be materialized first -- run it via ./run-scenario.sh, which
+  materializes before starting the simulator:
+    ./run-scenario.sh scenarios/generated-examples/audio-pid-timestamp-offset-generated.yaml -- \
+      --run scenarios/generated-examples/audio-pid-timestamp-offset-generated.yaml --result-file /tmp/result.json
+
+provider:
+  name: audio-pid-timestamp-offset-demo
+  channels:
+    audio-pid-offset:
+      display_name: Unsignaled Audio-PID Timestamp Offset (generated)
+      payload_mode: file
+      generate:
+        worker: ts
+        base: clean-relay-loop-long.ts
+        args:
+          - "-I"
+          - "file"
+          - "{IN}"
+          - "-P"
+          - "pcredit"
+          - "--pid"
+          - "257"
+          - "--add-pts"
+          - "-3000"
+          - "--add-dts"
+          - "-3000"
+          - "--unit"
+          - "millisecond"
+          - "-O"
+          - "file"
+          - "{OUT}"
+      payload_chunk_bytes: 1316
+      chunk_count: 1200
+      chunk_interval_ms: 20
+
+expected_simulator_events:
+  - stream_opened

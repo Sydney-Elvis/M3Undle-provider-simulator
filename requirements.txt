@@ -1,0 +1,9 @@
+# Pinned runtime dependencies for the provider simulator engine
+# (src/provider_sim.py). Single source of truth -- the Dockerfile installs
+# from this file rather than pinning versions a second time inline.
+#
+# PyYAML: native scenario parsing (YAML/JSON).
+# jsonschema: fail-closed structural validation against
+#   schemas/provider-scenario.schema.json.
+pyyaml==6.0.1
+jsonschema==4.10.3

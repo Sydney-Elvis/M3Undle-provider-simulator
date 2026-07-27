@@ -1,0 +1,29 @@
+schema_version: 1
+minimum_engine_version: 0.1.0
+
+name: baseline-14-multiple-downstream-clients
+description: >
+  Stage A7 baseline #14. max_streams: 1 makes the provider itself enforce
+  a single concurrent upstream connection per channel (a second direct
+  connection attempt is rejected with reason=max_streams_reached). This
+  scenario proves that enforcement at the simulator level; whether a real
+  M3Undle deployment correctly shares one upstream connection across
+  multiple downstream clients instead of opening a second one is a
+  client-side assertion outside this file's scope, per the Stage A4
+  engine/M3Undle boundary -- see run_stream_limit_scenarios.py for that
+  half of the proof.
+
+provider:
+  name: baseline-multi-client
+  max_streams: 1
+  channels:
+    shared-upstream:
+      display_name: Multiple Downstream Clients
+      group_title: Sim-Baseline
+      payload_mode: ts
+      failure_mode: none
+      chunk_count: 300
+      chunk_interval_ms: 100
+
+expected_simulator_events:
+  - stream_opened

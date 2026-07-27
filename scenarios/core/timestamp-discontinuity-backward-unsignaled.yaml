@@ -1,0 +1,33 @@
+schema_version: 1
+minimum_engine_version: 0.2.0
+
+name: timestamp-discontinuity-backward-unsignaled
+description: >
+  Real TSDuck-produced MPEG-TS fault, beyond the original 15-item Stage A7
+  baseline suite: an unsignaled backward PTS/DTS discontinuity, the "lying
+  provider" case the plan's Q2 media-fault domain review flagged as the
+  real-world proxy-killer -- content restarts mid-stream with no
+  discontinuity_indicator flag, no manifest-level signal, nothing to warn
+  a consumer the timeline just went backward. Serves
+  fixtures/synthetic/clean-relay-timestamp-discontinuity.ts, in which video
+  PTS/DTS jump backward ~5s at byte offset 1,128,000 (packet 6000) while
+  PCR continues completely undisturbed through the same point -- see that
+  fixture's README entry for exactly how it was produced and verified
+  (ffprobe timestamps + TSDuck pcrextract, not just asserted).
+
+provider:
+  name: timestamp-discontinuity-demo
+  max_streams: 4
+  channels:
+    timestamp-discontinuity:
+      display_name: Unsignaled Backward Timestamp Discontinuity
+      group_title: Sim-Advanced
+      payload_mode: file
+      payload_file: fixtures/synthetic/clean-relay-timestamp-discontinuity.ts
+      payload_chunk_bytes: 1316
+      chunk_count: 1200
+      chunk_interval_ms: 20
+      failure_mode: none
+
+expected_simulator_events:
+  - stream_opened

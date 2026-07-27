@@ -1,0 +1,21 @@
+schema_version: 1
+minimum_engine_version: 0.1.0
+
+name: baseline-01-clean-continuous-live-stream
+description: >
+  Stage A7 baseline #1. A single channel streaming the engine's synthetic
+  TS generator with no fault configured -- the credible "nothing is wrong"
+  control case every other baseline scenario is contrasted against.
+
+provider:
+  name: baseline-clean-live
+  max_streams: 4
+  channels:
+    live:
+      display_name: Clean Continuous Live
+      group_title: Sim-Baseline
+      payload_mode: ts
+      failure_mode: none
+
+expected_simulator_events:
+  - stream_opened

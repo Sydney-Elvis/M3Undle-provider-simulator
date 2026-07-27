@@ -1,0 +1,25 @@
+schema_version: 1
+minimum_engine_version: 0.1.0
+
+name: baseline-04-graceful-upstream-eof
+description: >
+  Stage A7 baseline #4. A short, finite, fault-free chunk_count means the
+  connection reaches natural completion (broken=false) rather than being
+  cut off -- a clean upstream end-of-file, distinct from baseline #5's
+  abrupt close.
+
+provider:
+  name: baseline-graceful-eof
+  max_streams: 4
+  channels:
+    graceful-eof:
+      display_name: Graceful Upstream EOF
+      group_title: Sim-Baseline
+      payload_mode: ts
+      failure_mode: none
+      chunk_count: 50
+      chunk_interval_ms: 50
+
+expected_simulator_events:
+  - stream_opened
+  - stream_closed

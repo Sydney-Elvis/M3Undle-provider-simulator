@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "M3Undle provider simulator scenario file",
+  "description": "Structural schema for the nested provider:/sequence: scenario shape (scripts/srv1/provider_sim.py --scenario). A top-level $schema property is explicitly allowed and ignored -- see the Stage A5 versioning decision in docs/M3Undle_Provider_Simulator_Implementation_Plan.md (rejecting $schema was flagged as an anti-pattern, WireMock issue #1006). This schema covers structure and enums only; sequence-step semantics that depend on `action` (e.g. which override fields set_channel_behavior accepts) are enforced separately, at load time, by validate_scenario_config()/_validate_override_body() in provider_sim.py -- the single canonical implementation shared with the live /debug/channels/{id}/override endpoint. Legacy flat JSON fixtures (no provider: block) are the pre-Stage-A5 format; they are not validated against this schema, only against the same load-time semantic checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["provider"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "type": "integer", "enum": [1] },
+    "minimum_engine_version": { "type": ["string", "number"] },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["channels"],
+      "properties": {
+        "name": { "type": "string" },
+        "max_streams": { "type": "integer", "minimum": 1 },
+        "defaults": { "$ref": "#/$defs/channelBehavior" },
+        "channels": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/channelBehavior" }
+        },
+        "authentication": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": { "enum": ["static"] },
+            "username": { "type": "string" },
+            "password": { "type": "string" }
+          }
+        }
+      }
+    },
+    "sequence": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sequenceStep" }
+    },
+    "expected_simulator_events": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["event"],
+            "properties": {
+              "event": { "type": "string" },
+              "action_id": { "type": "string" }
+            }
+          }
+        ]
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Stage A8.5 run/verify mode settings (provider_sim.py --run). Both optional.",
+      "properties": {
+        "max_duration_s": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Overall watchdog for how long --run waits for the driven client and sequence to settle before evaluating expected_simulator_events. Defaults to the engine's DEFAULT_RUN_MAX_DURATION_SECONDS."
+        },
+        "trigger_timeout_s": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Overrides ScenarioSequenceRunner's default 60s metric-trigger timeout for this scenario."
+        }
+      }
+    },
+    "epg": { "type": "object" },
+    "xtream": { "type": "object" }
+  },
+  "$defs": {
+    "channelBehavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "display_name": { "type": "string" },
+        "group_title": { "type": "string" },
+        "tvg_id": { "type": "string" },
+        "content_type": { "type": "string" },
+        "failure_mode": {
+          "enum": [
+            "none", "immediate_error", "http_error", "close_after_chunks",
+            "close_after_seconds", "stall_after_chunks",
+            "disconnect_before_headers", "reset_before_headers"
+          ]
+        },
+        "payload_mode": { "enum": ["text", "ts", "file"] },
+        "ts_variant": {
+          "enum": ["idr", "no_idr", "continuity_counter_fault", "delayed_pat_pmt", "malformed_packet"]
+        },
+        "playlist_format": { "enum": ["direct", "hls"] },
+        "payload": { "type": "string" },
+        "payload_file": { "type": "string" },
+        "generate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["worker", "base", "args"],
+          "description": "Scenario-load-time worker materialization (see src/materialize_fixtures.py). Not read by the engine itself -- run-scenario.sh runs the materializer against this block before starting the simulator, producing the file payload_file should then point at. args may use the literal placeholder tokens {IN} and {OUT} for the resolved in-container input/output paths.",
+          "properties": {
+            "worker": { "enum": ["media", "ts"] },
+            "base": { "type": "string" },
+            "args": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "payload_chunk_bytes": { "type": "integer", "minimum": 1 },
+        "chunk_count": { "type": "integer", "minimum": 0 },
+        "chunk_interval_ms": { "type": "integer", "minimum": 0 },
+        "startup_delay_ms": { "type": "integer", "minimum": 0 },
+        "failure_after_chunks": { "type": "integer", "minimum": 0 },
+        "failure_after_seconds": { "type": "number", "minimum": 0 },
+        "stall_seconds": { "type": "number", "minimum": 0 },
+        "failure_status_code": { "type": "integer" },
+        "retry_after_seconds": { "type": "integer", "minimum": 0 },
+        "hls_segment_count": { "type": "integer", "minimum": 1 },
+        "hls_segment_chunks": { "type": "integer", "minimum": 1 },
+        "hls_endlist": { "type": "boolean" }
+      }
+    },
+    "sequenceStep": {
+      "type": "object",
+      "required": ["action"],
+      "additionalProperties": true,
+      "properties": {
+        "action": { "enum": ["set_channel_behavior", "wait", "switch_source"] },
+        "channel": { "type": "string" },
+        "id": { "type": "string" },
+        "duration_s": { "type": "number", "minimum": 0 },
+        "trigger": {
+          "type": "object",
+          "required": ["after"],
+          "additionalProperties": false,
+          "properties": {
+            "after": {
+              "type": "object",
+              "additionalProperties": false,
+              "minProperties": 1,
+              "maxProperties": 1,
+              "properties": {
+                "seconds": { "type": "number", "minimum": 0 },
+                "connections": { "type": "integer", "minimum": 0 },
+                "chunks": { "type": "integer", "minimum": 0 },
+                "bytes": { "type": "integer", "minimum": 0 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

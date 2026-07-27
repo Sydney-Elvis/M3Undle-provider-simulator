@@ -1,0 +1,27 @@
+schema_version: 1
+minimum_engine_version: 0.2.0
+
+name: baseline-05-abrupt-connection-close
+description: >
+  Stage A7 baseline #5. Streams cleanly for 15 chunks (~750ms), then the
+  connection drops outright -- no HTTP error, no graceful end-of-stream,
+  just gone. Distinct from baseline #4 (graceful EOF, chunk_count runs out
+  naturally) and baseline #6 (a stall before the drop); here the drop is
+  immediate once the trigger chunk is reached.
+
+provider:
+  name: baseline-abrupt-close
+  max_streams: 4
+  channels:
+    abrupt-close:
+      display_name: Abrupt Connection Close
+      group_title: Sim-Baseline
+      payload_mode: ts
+      failure_mode: close_after_chunks
+      failure_after_chunks: 15
+      chunk_count: 50
+      chunk_interval_ms: 50
+
+expected_simulator_events:
+  - stream_opened
+  - stream_broken
