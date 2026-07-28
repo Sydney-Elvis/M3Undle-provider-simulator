@@ -581,6 +581,7 @@ class ProviderState:
                     channel_id: self._behavior_snapshot_locked(self._behavior_for_channel_locked(channel_id))
                     for channel_id in sorted(self.channels)
                 },
+                "connection_timeline": dict(self.connection_timeline),
                 "recent_events": list(self.events),
             }
 
